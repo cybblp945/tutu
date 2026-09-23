@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitHub Pages 图床管理器</title>
+<style>
+*{box-sizing:border-box}
+:root{--p:#7c3aed;--pd:#5b21b6;--bg:#f5f3ff;--text:#1f2937;--muted:#6b7280;--bd:#e5e7eb}
+body{margin:0;background:linear-gradient(135deg,#f5f3ff,#fff,#f3e8ff);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+header{background:linear-gradient(135deg,#7c3aed,#9333ea,#6d28d9);color:#fff;padding:28px 18px;box-shadow:0 6px 25px #5b21b640}
+header>div,.wrap{max-width:1200px;margin:auto}
+h1{margin:0 0 8px;font-size:27px}header p{margin:0;font-size:14px;opacity:.9}
+.wrap{padding:24px 16px 50px}.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 8px 30px #4c1d9518;border:1px solid #7c3aed14}
+.title,.galleryHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
+h2{margin:0;font-size:19px}
+.row{display:flex;gap:10px}
+input[type=password],input[type=text]{width:100%;border:1px solid var(--bd);border-radius:10px;padding:11px 13px;font-size:14px;outline:0}
+input:focus{border-color:var(--p);box-shadow:0 0 0 3px #7c3aed1f}
+button{border:0;border-radius:10px;padding:10px 15px;cursor:pointer;font-weight:600;transition:.15s;white-space:nowrap}
+button:hover{transform:translateY(-1px)}button:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.primary{background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff}.secondary{background:#f3f4f6;color:#374151}.success{background:#dcfce7;color:#15803d}.danger{background:#fee2e2;color:#b91c1c}
+.status,.info{color:var(--muted);font-size:13px;margin-top:10px;line-height:1.6}
+.drop{border:2px dashed #c4b5fd;background:#faf5ff;border-radius:15px;padding:40px 18px;text-align:center;cursor:pointer}
+.drop:hover,.drop.drag{border-color:var(--p);background:#f3e8ff}.drop b{display:block;font-size:17px;margin:8px 0}.drop span{font-size:13px;color:var(--muted)}#files{display:none}
+.uploads{display:grid;gap:10px;margin-top:16px}.upload{border:1px solid var(--bd);border-radius:12px;padding:12px;background:#fafafa}.utop{display:flex;justify-content:space-between;gap:10px}.uname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:14px}.ust{font-size:12px}.bar{height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:9px}.fill{height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#c026d3);transition:width .15s}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}.file{background:#fff;border:1px solid var(--bd);border-radius:14px;overflow:hidden;box-shadow:0 4px 15px #0000000d}.preview{height:190px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden}.preview img{width:100%;height:100%;object-fit:contain;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 50%/20px 20px}.preview audio{width:90%}.audioIcon{font-size:55px}.fi{padding:14px}.fn{font-weight:700;font-size:14px;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.link{display:flex;gap:7px}.link input{font-size:12px;padding:9px 10px}.link button{padding:8px 11px;font-size:12px}.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.acts button{width:100%}.empty,.loading{text-align:center;color:var(--muted);padding:42px 15px;border:1px dashed var(--bd);border-radius:12px;background:#fafafa}
+.toasts{position:fixed;right:20px;bottom:20px;z-index:9;display:flex;flex-direction:column;gap:9px;max-width:calc(100vw - 40px)}.toast{background:#1f2937;color:#fff;padding:12px 15px;border-radius:11px;box-shadow:0 8px 25px #0003;font-size:13px}.toast.ok{background:#166534}.toast.err{background:#991b1b}.toast.warn{background:#92400e}
+@media(max-width:600px){h1{font-size:23px}.row{flex-direction:column}.galleryHead,.title{align-items:flex-start;flex-direction:column}.gallery{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div><h1>☁️ GitHub Pages 图床管理器</h1><p id="repo"></p></div></header>
+<main class="wrap">
+<section class="card">
+<div class="title"><h2>🔐 GitHub Token</h2></div>
+<div class="row"><input id="token" type="password" placeholder="输入 GitHub Personal Access Token" autocomplete="off"><button class="primary" id="save">保存 Token</button><button class="secondary" id="clear">清除</button></div>
+<div class="status" id="ts"></div>
+<div class="info">Token 只保存在当前浏览器 localStorage。建议使用 Fine-grained Token，并只给目标仓库 Contents 读写权限。</div>
+</section>
+<section class="card">
+<div class="title"><h2>📤 上传文件</h2></div>
+<div class="drop" id="drop"><div style="font-size:42px">☁️</div><b>点击选择文件，或拖拽到这里</b><span>支持多选 · JPG PNG GIF WEBP SVG BMP ICO · MP3 WAV M4A OGG FLAC AAC</span><input id="files" type="file" multiple></div>
+<div class="uploads" id="uploads"></div>
+</section>
+<section class="card">
+<div class="galleryHead"><h2>🖼️ 图库 <small id="count" style="color:#6b7280;font-size:13px;font-weight:400">0 个文件</small></h2><button class="primary" id="refresh">↻ 刷新图库</button></div>
+<div id="gallery"><div class="empty">点击「刷新图库」加载文件。</div></div>
+</section>
+</main>
+<div class="toasts" id="toasts"></div>
+<script>
+const GITHUB_USERNAME="cybblp945";
+const GITHUB_REPO="tutu";
+const GITHUB_BRANCH="main";
+
+const KEY="github_image_host_token";
+const API=`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}`;
+const RAW=`https://${GITHUB_USERNAME}.github.io/${GITHUB_REPO}/`;
+const ALLOWED=["jpg","jpeg","png","gif","webp","svg","bmp","ico","mp3","wav","m4a","ogg","flac","aac"];
+const IMAGES=["jpg","jpeg","png","gif","webp","svg","bmp","ico"];
+const AUDIOS=["mp3","wav","m4a","ogg","flac","aac"];
+
+const $=id=>document.getElementById(id);
+$("repo").textContent=`${GITHUB_USERNAME} / ${GITHUB_REPO} · 分支 ${GITHUB_BRANCH}`;
+
+function toast(msg,type=""){const x=document.createElement("div");x.className="toast "+type;x.textContent=msg;$("toasts").appendChild(x);setTimeout(()=>x.remove(),3000)}
+function token(){return localStorage.getItem(KEY)||""}
+function headers(){return{"Accept":"application/vnd.github+json","Authorization":`Bearer ${token()}`,"X-GitHub-Api-Version":"2022-11-28"}}
+async function api(url,opt={}){if(!token())throw Error("请先设置 GitHub Token");const r=await fetch(url,{...opt,headers:{...headers(),...(opt.headers||{})}});let d=null;try{d=await r.json()}catch{}if(!r.ok)throw Error(d?.message||`HTTP ${r.status}`);return d}
+function ext(n){return n.toLowerCase().split(".").pop()}
+function allowed(f){return ALLOWED.includes(ext(f.name))}
+function image(n){return IMAGES.includes(ext(n))}
+function audio(n){return AUDIOS.includes(ext(n))}
+function pathUrl(n){return RAW+n.split("/").map(encodeURIComponent).join("/")}
+
+$("token").value=token();$("ts").textContent=token()?"✓ 已加载浏览器中保存的 Token":"尚未设置 Token";
+$("save").onclick=()=>{let t=$("token").value.trim();if(!t)return toast("请输入 Token","warn");localStorage.setItem(KEY,t);$("ts").textContent="✓ Token 已保存";toast("Token 保存成功","ok");load()}
+$("clear").onclick=()=>{localStorage.removeItem(KEY);$("token").value="";$("ts").textContent="尚未设置 Token";toast("Token 已清除","ok")}
+
+$("drop").onclick=()=>$("files").click();
+$("files").onchange=e=>{handle([...e.target.files]);e.target.value=""};
+["dragenter","dragover"].forEach(e=>$("drop").addEventListener(e,x=>{x.preventDefault();$("drop").classList.add("drag")}));
+["dragleave","drop"].forEach(e=>$("drop").addEventListener(e,x=>{x.preventDefault();$("drop").classList.remove("drag")}));
+$("drop").ondrop=e=>handle([...e.dataTransfer.files]);
+
+async function handle(fs){
+ if(!token())return toast("请先设置 GitHub Token","warn");
+ let good=fs.filter(allowed);if(good.length<fs.length)toast(`跳过 ${fs.length-good.length} 个不支持的文件`,"warn");
+ for(const f of good)await upload(f);await load()
+}
+function read(f,cb){return new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=()=>rej(Error("读取文件失败"));r.onprogress=e=>{if(e.lengthComputable)cb?.(e.loaded/e.total*60)};r.readAsDataURL(f)})}
+async function upload(f){
+ let box=document.createElement("div");box.className="upload";box.innerHTML=`<div class="utop"><div class="uname"></div><div class="ust">准备上传…</div></div><div class="bar"><div class="fill"></div></div>`;box.querySelector(".uname").textContent=f.name;$("uploads").prepend(box);
+ let st=box.querySelector(".ust"),fill=box.querySelector(".fill");
+ try{st.textContent="读取文件…";let b64=await read(f,p=>{fill.style.width=p+"%";st.textContent=`读取中 ${Math.round(p/60*100)}%`});st.textContent="上传到 GitHub…";fill.style.width="70%";
+ let p=encodeURIComponent(f.name).replace(/%2F/g,"/");await api(`${API}/contents/${p}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:`Upload ${f.name}`,content:b64,branch:GITHUB_BRANCH})});
+ fill.style.width="100%";st.textContent="✓ 上传成功";toast(`${f.name} 上传成功`,"ok")
+ }catch(e){fill.style.width="100%";fill.style.background="#dc2626";st.textContent="✕ "+e.message;toast(`${f.name} 上传失败：${e.message}`,"err")}
+}
+$("refresh").onclick=load;
+async function load(){
+ if(!token()){$("gallery").innerHTML='<div class="empty">请先设置 GitHub Token。</div>';return}
+ $("refresh").disabled=true;$("refresh").textContent="刷新中…";$("gallery").innerHTML='<div class="loading">正在读取 GitHub 仓库…</div>';
+ try{let d=await api(`${API}/contents?ref=${encodeURIComponent(GITHUB_BRANCH)}`);let fs=Array.isArray(d)?d.filter(x=>x.type==="file"&&allowed({name:x.name})):[];render(fs)}
+ catch(e){$("gallery").innerHTML=`<div class="empty">加载失败：${esc(e.message)}</div>`;toast("刷新失败："+e.message,"err")}
+ finally{$("refresh").disabled=false;$("refresh").textContent="↻ 刷新图库"}
+}
+function render(fs){
+ $("count").textContent=`${fs.length} 个文件`;if(!fs.length){$("gallery").innerHTML='<div class="empty">暂无支持的图片或音频文件。</div>';return}
+ let g=document.createElement("div");g.className="gallery";fs.forEach(f=>g.appendChild(card(f)));$("gallery").innerHTML="";$("gallery").appendChild(g)
+}
+function card(f){
+ let c=document.createElement("div");c.className="file";let pre=document.createElement("div");pre.className="preview";let u=pathUrl(f.name);
+ if(image(f.name)){let i=document.createElement("img");i.src=u;i.alt=f.name;i.loading="lazy";pre.appendChild(i)}
+ else if(audio(f.name)){let a=document.createElement("audio");a.controls=true;a.preload="metadata";a.src=u;pre.appendChild(a)}
+ else pre.innerHTML='<div class="audioIcon">📄</div>';
+ let info=document.createElement("div");info.className="fi";let n=document.createElement("div");n.className="fn";n.textContent=f.name;n.title=f.name;
+ let lr=document.createElement("div");lr.className="link";let inp=document.createElement("input");inp.value=u;inp.readOnly=true;let cp=document.createElement("button");cp.className="success";cp.textContent="复制";cp.onclick=async()=>{try{await navigator.clipboard.writeText(u);cp.textContent="已复制";toast("外链已复制","ok");setTimeout(()=>cp.textContent="复制",1500)}catch{inp.select();document.execCommand("copy");toast("外链已复制","ok")}};lr.append(inp,cp);
+ let ac=document.createElement("div");ac.className="acts";let op=document.createElement("button");op.className="secondary";op.textContent="打开";op.onclick=()=>window.open(u,"_blank");let del=document.createElement("button");del.className="danger";del.textContent="删除";del.onclick=()=>delFile(f);ac.append(op,del);
+ info.append(n,lr,ac);c.append(pre,info);return c
+}
+async function delFile(f){
+ if(!confirm(`确定删除？\n\n${f.name}`))return;
+ try{let p=encodeURIComponent(f.name).replace(/%2F/g,"/");await api(`${API}/contents/${p}`,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:`Delete ${f.name}`,sha:f.sha,branch:GITHUB_BRANCH})});toast(`${f.name} 已删除`,"ok");load()}
+ catch(e){toast("删除失败："+e.message,"err")}
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+load();
+</script>
+</body>
+</html>
